@@ -4,8 +4,8 @@
 .data ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     msj1 db 'El perimetro es de: $'
     
-    num1 dw 9999 ; FALTA LA FUNCION PARA QUE ESTOS VALORES SEAN LAS ENTREDAS (PASAR DE ASCII A NUM)  
-    num2 dw 99 
+    num1 dw 12 ; FALTA LA FUNCION PARA QUE ESTOS VALORES SEAN LAS ENTREDAS (PASAR DE ASCII A NUM)  
+    num2 dw 5 
     num1Res dw ? ; dw = un byte  
     num2Res dw ? 
     num3Res dd ? ; dd = dos bytes
@@ -65,16 +65,30 @@ perimetroCuadrado proc ; num1.num2 = lado
 
 areaCuadradro proc  ; num1.num2 = lado  
     
-    ;parte decimal
-    mov ax, num2
-    mov cx, num2
-    mul cx ; el resul queda en AX (no excede 16 bits) 
-    mov num1Res, ax 
-    
+
     ;parte entera 
-    mov ax, num1
+    mov ax, 10
     mov cx, num1
-    mul cx ; el resul queda en DX:AX  
+    mul cx ; el resul queda en DX:AX
+    add ax, num2
+    mul ax
+    ;mov bx, 10000 ; Valor divisor
+    ;div bx ; Divide el resultado
+
+    ;parte decimal
+    ;mov ax, num2
+    ;mov cx, num2
+    ;mul cx ; el resul queda en AX (no excede 16 bits) 
+    ;mov num1Res, ax 
+        
+    
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        
+    ;mov cx, 100
+    ;idiv cx 
+    
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   
     mov [num3Res], dx
     mov [num3Res+2], ax  
     
