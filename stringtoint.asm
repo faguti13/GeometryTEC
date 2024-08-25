@@ -143,17 +143,24 @@ calculate_perimeter:
     mul bx
     mov perimeter, ax      ; Guardar el resultado en perimeter
 
+    ; Verificar si el número tiene punto decimal
+    cmp has_point, 1
+    jne no_division_perimeter  ; Si no hay punto, saltar la división
+
     ; Dividir el perímetro entre 100
     mov ax, perimeter
-    mov bx, 100          ; Divisor
+    mov bx, 100            ; Divisor
     div bx
     mov perimeter, ax      ; Actualizar el resultado del perímetro
     mov remainder, dx      ; Guardar el residuo en remainder
 
-
-
+no_division_perimeter:
     ; Imprimir el resultado del perímetro
     call PrintNum          ; Imprimir el cociente (en AX)
+
+    ; Si hay punto, imprimir el punto y el residuo
+    cmp has_point, 1
+    jne done_printing      ; Si no hay punto, terminar la impresión
 
     ; Imprimir el punto
     mov dl, '.'            ; Carácter punto
@@ -162,7 +169,7 @@ calculate_perimeter:
 
     ; Imprimir el residuo (en DX) con longitud fija
     mov ax, remainder      ; Cargar el residuo en AX para impresión
-    mov cx, 4              ; Queremos que el residuo tenga 4 dígitos
+    mov cx, 2              ; Queremos que el residuo tenga 4 dígitos
     call PrintNumFixed     ; Llamar a la función para imprimir con ceros a la izquierda
 
 done_printing:
