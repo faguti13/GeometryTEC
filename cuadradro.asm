@@ -2,10 +2,19 @@
 .stack 100h
 
 .data ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+    input db 100 dup(0)    ; Buffer para la entrada del usuario
+    ;result dd ?            ; Resultado de 32 bits
+    newline db 13, 10, '$' ; Para imprimir nueva línea
+    ;debug_msg db 'Iteracion: $'
+    square_side_msg db 'Por favor ingrese el tama', 0A4h, 'o del lado del cuadrado. $', 0Dh, 0Ah, '$'
+
+    
     msj1 db 'El perimetro es de: $'
     msj2 db 'El area es de: $'
     
-    num1 dd 265 ; FALTA LA FUNCION PARA QUE ESTOS VALORES SEAN LAS ENTREDAS (PASAR DE ASCII A NUM)  
+    num1 dd ? ; FALTA LA FUNCION PARA QUE ESTOS VALORES SEAN LAS ENTREDAS (PASAR DE ASCII A NUM)  
     num2 dd 37 
     num3 dd 50321    
            
@@ -28,16 +37,117 @@ main proc
     ;call perimetroRect 
     ;call areaRect 
     ;call perimetroPen
-    call perimetroParale
+    ;call perimetroParale
     ;call areaParale
     
     
        
-    ; Terminar el programa
-    mov ah, 4Ch
+    ; Mostrar prompt
+    mov dx, offset square_side_msg
+    mov ah, 9
     int 21h
+    
+    mov ah, 09h
+    lea dx, newline
+    int 21h
+
+    ; Leer entrada del usuario
+    mov ah, 0Ah
+    mov dx, offset input
+    mov byte ptr [input], 99  ; Máximo 99 caracteres
+    int 21h
+
+    ; Agregar terminador de cadena
+    mov si, offset input + 1
+    mov cl, [si]  ; Longitud de la cadena
+    xor ch, ch
+    inc si
+    add si, cx
+    mov byte ptr [si], 0
+
+    ; Inicializar el resultado a 0
+    xor ax, ax
+    mov word ptr [num1], ax
+    mov word ptr [num1+2], ax
+
+    ; Apuntar al inicio de la cadena de entrada
+    lea si, input + 2
+    xor cx, cx  ; Contador de iteraciones
+
+convert_loop:
+    inc cx
+    push cx
+    mov ah, 9
+    pop cx
+    mov ax, cx
+    ;call print_number
+    ;call print_newline
+
+    ; Cargar el siguiente carácter
+    mov al, [si]
+    
+    ; Verificar si hemos llegado al final de la cadena
+    cmp al, 0
+    je done
+
+    ; Verificar si el carácter es un punto decimal y omitirlo
+    cmp al, '.'
+    je skip_dot
+
+    ; Convertir ASCII a número
+    sub al, '0'
+
+    ; Multiplicar el resultado actual por 10
+    mov bx, 10
+    mov ax, word ptr [num1]
+    mul bx
+    mov word ptr [num1], ax
+    push dx
+    mov ax, word ptr [num1+2]
+    mul bx
+    pop bx
+    add ax, bx
+    mov word ptr [num1+2], ax
+
+    ; Sumar el nuevo dígito
+    xor ah, ah
+    mov al, [si]
+    sub al, '0'
+    add word ptr [num1], ax
+    adc word ptr [num1+2], 0
+
+    ; Imprimir el valor actual
+    ;call print_result
+
+skip_dot:
+    ; Avanzar al siguiente carácter
+    inc si
+    jmp convert_loop
+
+done:
+    ; Imprimir el resultado final
+    ;mov dx, offset newline
+    ;mov ah, 9
+    ;int 21h
+
+    
+    call areaCuadradro
+    ; Llama a la función para convertir el número de vuelta a una cadena
+    call result_to_string
+    
+    
      
-    main endp
+    call perimetroCuadrado
+    ; Llama a la función para convertir el número de vuelta a una cadena
+    call result_to_string
+    
+        
+    ; Terminar el programa
+    mov ax, 4c00h
+    int 21h
+
+
+main endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
@@ -118,6 +228,10 @@ perimetroCuadrado proc ; num1 = lado
     mov ax, [num1ResD] ;QUITAR DESPUES, solo es para verificar
     mov bx, [num1ResD+2] ;QUITAR DESPUES, solo es para verificar
     
+    mov ah, 09h
+    lea dx, newline
+    int 21h
+    
     ; Imprimir el mensaje del perimetro
     lea dx, msj1
     call imprimir 
@@ -133,10 +247,15 @@ areaCuadradro proc ; num1 = lado
     call productoEntrada1PorEntrada1 ; en este caso lado*lado (num1*num1)
     ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
     
-    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
-    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
-    mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
-    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar   
+    ;mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    ;mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
+    ;mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
+    ;mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar   
+    
+    mov ah, 09h
+    lea dx, newline
+    int 21h
+    
     
     ; Imprimir el mensaje del area
     lea dx, msj2
@@ -351,7 +470,163 @@ DosVecesNum1MasNum2 proc ; num1= base, num2= altura
     ret
     DosVecesNum1MasNum2 endp 
   
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+
+
+
+; Función para imprimir el resultado actual en hexadecimal
+print_result proc
+    push ax
+    push dx
+    mov dx, word ptr [num2ResL+2]
+    call print_word
+    mov dx, word ptr [num2ResL]
+    call print_word
+    call print_newline
+    pop dx
+    pop ax
+    ret
+print_result endp
+; Función para imprimir una palabra (16 bits) en hexadecimal
+print_word proc
+    push ax
+    push cx
+    mov ax, dx
+    mov cl, 12
+    call print_nibble
+    mov cl, 8
+    call print_nibble
+    mov cl, 4
+    call print_nibble
+    mov cl, 0
+    call print_nibble
+    pop cx
+    pop ax
+    ret
+print_word endp
+; Función para imprimir un nibble (4 bits)
+print_nibble proc
+    push ax
+    push dx
+    mov dx, ax
+    shr dx, cl
+    and dl, 0Fh
+    add dl, '0'
+    cmp dl, '9'
+    jle print_digit
+    add dl, 7
+print_digit:
+    mov ah, 2
+    int 21h
+    pop dx
+    pop ax
+    ret
+print_nibble endp
+; Función para imprimir un número decimal
+print_number proc
+    push ax
+    push bx
+    push cx
+    push dx
+    mov bx, 10
+    xor cx, cx
+convert_to_decimal:
+    xor dx, dx
+    div bx
+    push dx
+    inc cx
+    test ax, ax
+    jnz convert_to_decimal
+print_decimal:
+    pop dx
+    add dl, '0'
+    mov ah, 2
+    int 21h
+    loop print_decimal
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+print_number endp
+; Función para imprimir nueva línea
+print_newline proc
+    push ax
+    push dx
+    mov dx, offset newline
+    mov ah, 9
+    int 21h
+    pop dx
+    pop ax
+    ret
+print_newline endp
+
+; Función para convertir el resultado a una cadena de caracteres y mostrarla
+result_to_string proc
+    push ax
+    push bx
+    push cx
+    push dx
+    push si
+    push di
+    
+    ; Buffer para almacenar la cadena resultante
+    lea di, input  ; Reutilizamos el buffer de entrada
+    xor cx, cx     ; Contador de dígitos
+
+    ; Cargar el valor de result
+    mov ax, word ptr [num2ResL+2]
+    mov dx, word ptr [num2ResL]
+
+convert_to_string:
+    ; Dividir por 10
+    xor dx, dx     ; Limpiar dx antes de dividir
+    mov bx, 10
+    div bx         ; ax = ax:dx / 10, dx = residuo
+
+    ; Convertir el residuo en un carácter
+    add dl, '0'
+    mov [di], dl
+    inc di
+    inc cx         ; Incrementar el contador de dígitos
+
+    ; Repetir hasta que el valor sea 0
+    test ax, ax
+    jnz convert_to_string
+
+    ; Añadir terminador de cadena
+    mov byte ptr [di], 0
+
+    ; Invertir la cadena
+    lea si, input
+    sub di, 1      ; Ajustar di al último carácter de la cadena
+invert_string:
+    cmp si, di
+    jge done_invert
+    mov al, [si]
+    mov bl, [di]
+    mov [di], al
+    mov [si], bl
+    inc si
+    dec di
+    jmp invert_string
+
+done_invert:
+    ; Mostrar la cadena resultante
+    lea dx, input
+    mov ah, 9
+    int 21h
+
+    pop di
+    pop si
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+result_to_string endp
+
+
  
-end main  
-
-
+end main
