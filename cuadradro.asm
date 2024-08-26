@@ -26,7 +26,11 @@ main proc
     ;call perimetroCuadrado
     ;call areaCuadradro 
     ;call perimetroRect 
-    call areaRect 
+    call areaRect
+    ;cal perimetroTriangulo
+    ;call areaTriangulo
+    ;call perimetroRombo
+    ;call areaRombo 
     ;call perimetroPent
     
        
@@ -210,7 +214,142 @@ areaRect proc ; num1= base, num2= altura
     ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
      
     ret
-    areaRect endp
+    areaRect endp     
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; TRIANGULO EQUILATERO
+
+perimetroTriangulo proc 
+    
+    ;parte baja  
+    mov ax, word ptr [num1]
+    mov cx, 3
+    mul cx ; queda en Dx:Ax Dx parte Alta, Ax parte baja
+    mov [num1ResD+2], ax ;parte baja en los 2 bytes superiores  de Ax
+    mov [num1ResD], dx ;parte alta en los 2 bytes inferiores de Dx
+      
+    ;parte alta
+    mov ax, word ptr [num1+2]
+    mov cx, 3
+    mul cx ; result solo queda en AX      
+    add [num1ResD], ax 
+    mov bx, [num1ResD+2] ;QUITAR DESPUES, solo es para verificar   
+    
+    ;Mensaje del perimetro
+    lea dx, msj1
+    call imprimir 
+    
+    ;Imprimir el perimetro calculado
+    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
+    
+    ret
+    
+    perimetroTriangulo endp
+
+areaTriangulo proc          
+    
+    ;Preparaci[on de los registros
+    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar  
+    
+    ;Manejo de distintas convinaciones 
+    
+    ;base parte baja * altura parte baja   
+    mov ax, word ptr [num1] ;num1=999999  
+    mov cx, 2 
+    div cx
+    mov cx, word ptr [num2] ;num2=999999
+    mul cx
+    add [num2ResL+2], ax  
+    add [num2ResL], dx
+    
+    ;base parte alta * altura parte baja   
+    xor dx, dx
+    xor ax, ax
+    xor cx, cx
+    mov ax, word ptr [num1+2] 
+    mov cx,2
+    div cx
+    mov cx, word ptr [num2]
+    mul cx
+    add [num2ResL],ax
+    add [num2ResH+2],dx
+    
+    ;base parte baja * altura parte alta  
+    mov ax, word ptr [num1]  
+    mov cx, 2
+    div cx
+    mov cx, word ptr [num2+2]
+    mul cx  
+    xor cx, cx ; preparar para el acarreo 
+    add [num2ResL], ax 
+    ;manejar el acarreo. ADC (Add with Carry): suma dos operandos junto con el valor del flag de acarreo (CF).
+    adc cx, 0       ; CX = 1 si CF = 1, CX = 0 si CF = 0
+    add [num2ResH+2], cx
+    add [num2ResH+2], dx
+    
+    ;base parte alta * altura parte alta
+    mov ax, word ptr [num1+2]     
+    mov cx, 2
+    div cx
+    mov cx, word ptr [num2+2]
+    mul cx 
+    add [num2ResH],dx
+    add [num2ResH+2], ax 
+
+    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar
+    
+    ;Mensaje del area
+    lea dx, msj2
+    call imprimir
+
+    ; Imprimir el área calculada
+    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
+
+    ret    
+    
+    areaTriangulo endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ROMBO 
+  
+;num1=diagonal mayor,num2=diagonal menor,num3=lado 
+perimetroRombo pro ; p=4*num3 
+    
+    ;parte baja  
+    mov ax, word ptr [num3]
+    mov cx, 4
+    mul cx ; queda en DX:AX 
+    mov [num1ResD+2], ax
+    mov [num1ResD], dx
+   
+    ;parte alta
+    mov ax, word ptr [num1+2]
+    mov cx, 4
+    mul cx ; result solo queda en AX  
+    add [num1ResD], ax 
+    
+    mov ax, [num1ResD] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num1ResD+2] ;QUITAR DESPUES, solo es para verificar
+    
+    ; Imprimir el mensaje del perimetro
+    lea dx, msj1
+    call imprimir 
+    
+    ;Imprimir el perimetro calculado
+    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
+    
+    ret 
+    perimetroRombo endp   
+
+areaRombo proc ;num1*num2/2
+    
+    areaRombo endp
     
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 ; PROCEDIMIENTOS GENERALES 

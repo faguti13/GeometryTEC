@@ -8,8 +8,9 @@
     
     
     ;FALTA LA FUNCION PARA QUE ESTOS VALORES SEAN LAS ENTREDAS (PASAR DE ASCII A NUM)  
-    num1 dd 999999; base=lado
-    num2 dd 999999; altura       
+    num1 dd 5;diagonal mayor
+    num2 dd 2;diagonal menor
+    num3 dd 3;lado       
     
            
         
@@ -25,8 +26,8 @@ main proc
     mov ax, @data
     mov ds, ax  
     
-    ;call perimetroTriangulo
-    call areaTriangulo
+    call perimetroRombo
+    ;call areaRombo
     
     ; Terminar el programa
     mov ah, 4Ch
@@ -34,12 +35,11 @@ main proc
      
     main endp
 
-;Perimetro: 3*base 
-perimetroTriangulo proc;
+perimetroRombo proc;
     
     ;parte baja  
-    mov ax, word ptr [num1]
-    mov cx, 3
+    mov ax, word ptr [num3]
+    mov cx, 4
     mul cx ; queda en Dx:Ax Dx parte Alta, Ax parte baja
     mov [num1ResD+2], ax ;parte baja en los 2 bytes superiores  de Ax
     mov [num1ResD], dx ;parte alta en los 2 bytes inferiores de Dx
@@ -62,43 +62,43 @@ perimetroTriangulo proc;
     perimetroTriangulo endp
 
 ;Area del triangulo num1*num2/2   
-areaTriangulo proc;   
+areaRombo proc;   
     
     ;Preparaci[on de los registros
-    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
-    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
-    mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
-    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar  
+    mov ax, [num2ResL+2] 
+    mov bx, [num2ResL]
+    mov cx, [num2ResH+2]
+    mov dx,[num2ResH]
     
     ;Manejo de distintas convinaciones 
     
     ;base parte baja * altura parte baja   
-    mov ax, word ptr [num1] ;num1=999999  
-    mov cx, 2 
+    mov ax, word ptr [num1]
+    mov cx, word ptr [num2]
+    mul cx  
+    mov cx, 2
     div cx
-    mov cx, word ptr [num2] ;num2=999999
-    mul cx
-    add [num2ResL+2], ax  
+    add [num2ResL+2], ax
     add [num2ResL], dx
     
     ;base parte alta * altura parte baja   
     xor dx, dx
     xor ax, ax
     xor cx, cx
-    mov ax, word ptr [num1+2] 
-    mov cx,2
-    div cx
+    mov ax, word ptr [num1+2]
     mov cx, word ptr [num2]
     mul cx
+    mov cx, 2
+    div cx
     add [num2ResL],ax
     add [num2ResH+2],dx
     
-    ;base parte baja * altura parte alta  
-    mov ax, word ptr [num1]  
-    mov cx, 2
-    div cx
+    ;base parte baja * altura parte alta
+    mov ax, word ptr [num1]
     mov cx, word ptr [num2+2]
-    mul cx  
+    mul cx
+    mov cx, 2
+    div cx   
     xor cx, cx ; preparar para el acarreo 
     add [num2ResL], ax 
     ;manejar el acarreo. ADC (Add with Carry): suma dos operandos junto con el valor del flag de acarreo (CF).
@@ -107,12 +107,12 @@ areaTriangulo proc;
     add [num2ResH+2], dx
     
     ;base parte alta * altura parte alta
-    mov ax, word ptr [num1+2]     
-    mov cx, 2
-    div cx
+    mov ax, word ptr [num1+2]
     mov cx, word ptr [num2+2]
     mul cx 
-    add [num2ResH],dx
+    mov cx, 2
+    div cx
+    add [num2ResH], dx
     add [num2ResH+2], ax 
 
     mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
