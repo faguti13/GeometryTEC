@@ -3,7 +3,7 @@
 .data
     input db 100 dup(0)    ; Buffer para la entrada del usuario
     result dd ?            ; Resultado de 32 bits
-    newline db 13, 10, '$' ; Para imprimir nueva lÃ­nea
+    newline db 13, 10, '$' ; Para imprimir nueva línea
     debug_msg db 'Iteracion: $'
     prompt_msg db 'Ingrese un numero (max 9 digitos): $'
 
@@ -20,7 +20,7 @@ main proc
     ; Leer entrada del usuario
     mov ah, 0Ah
     mov dx, offset input
-    mov byte ptr [input], 99  ; MÃ¡ximo 99 caracteres
+    mov byte ptr [input], 99  ; Máximo 99 caracteres
     int 21h
 
     ; Agregar terminador de cadena
@@ -41,7 +41,7 @@ main proc
     xor cx, cx  ; Contador de iteraciones
 
 convert_loop:
-    ; Imprimir nÃºmero de iteraciÃ³n
+    ; Imprimir número de iteración
     inc cx
     push cx
     mov dx, offset debug_msg
@@ -52,18 +52,18 @@ convert_loop:
     call print_number
     call print_newline
 
-    ; Cargar el siguiente carÃ¡cter
+    ; Cargar el siguiente carácter
     mov al, [si]
     
     ; Verificar si hemos llegado al final de la cadena
     cmp al, 0
     je done
 
-    ; Verificar si el carÃ¡cter es un punto decimal y omitirlo
+    ; Verificar si el carácter es un punto decimal y omitirlo
     cmp al, '.'
     je skip_dot
 
-    ; Convertir ASCII a nÃºmero
+    ; Convertir ASCII a número
     sub al, '0'
 
     ; Multiplicar el resultado actual por 10
@@ -78,7 +78,7 @@ convert_loop:
     add ax, bx
     mov word ptr [result+2], ax
 
-    ; Sumar el nuevo dÃ­gito
+    ; Sumar el nuevo dígito
     xor ah, ah
     mov al, [si]
     sub al, '0'
@@ -89,7 +89,7 @@ convert_loop:
     call print_result
 
 skip_dot:
-    ; Avanzar al siguiente carÃ¡cter
+    ; Avanzar al siguiente carácter
     inc si
     jmp convert_loop
 
@@ -100,12 +100,16 @@ done:
     int 21h
     call print_result
 
+    ; Llama a la función para convertir el número de vuelta a una cadena
+    call result_to_string
+
     ; Terminar el programa
     mov ax, 4c00h
     int 21h
 
+
 main endp
-; FunciÃ³n para imprimir el resultado actual en hexadecimal
+; Función para imprimir el resultado actual en hexadecimal
 print_result proc
     push ax
     push dx
@@ -118,7 +122,7 @@ print_result proc
     pop ax
     ret
 print_result endp
-; FunciÃ³n para imprimir una palabra (16 bits) en hexadecimal
+; Función para imprimir una palabra (16 bits) en hexadecimal
 print_word proc
     push ax
     push cx
@@ -135,7 +139,7 @@ print_word proc
     pop ax
     ret
 print_word endp
-; FunciÃ³n para imprimir un nibble (4 bits)
+; Función para imprimir un nibble (4 bits)
 print_nibble proc
     push ax
     push dx
@@ -153,7 +157,7 @@ print_digit:
     pop ax
     ret
 print_nibble endp
-; FunciÃ³n para imprimir un nÃºmero decimal
+; Función para imprimir un número decimal
 print_number proc
     push ax
     push bx
@@ -180,7 +184,7 @@ print_decimal:
     pop ax
     ret
 print_number endp
-; FunciÃ³n para imprimir nueva lÃ­nea
+; Función para imprimir nueva línea
 print_newline proc
     push ax
     push dx
@@ -191,4 +195,70 @@ print_newline proc
     pop ax
     ret
 print_newline endp
+
+; Función para convertir el resultado a una cadena de caracteres y mostrarla
+result_to_string proc
+    push ax
+    push bx
+    push cx
+    push dx
+    push si
+    push di
+    
+    ; Buffer para almacenar la cadena resultante
+    lea di, input  ; Reutilizamos el buffer de entrada
+    xor cx, cx     ; Contador de dígitos
+
+    ; Cargar el valor de result
+    mov ax, word ptr [result+2]
+    mov dx, word ptr [result]
+
+convert_to_string:
+    ; Dividir por 10
+    xor dx, dx     ; Limpiar dx antes de dividir
+    mov bx, 10
+    div bx         ; ax = ax:dx / 10, dx = residuo
+
+    ; Convertir el residuo en un carácter
+    add dl, '0'
+    mov [di], dl
+    inc di
+    inc cx         ; Incrementar el contador de dígitos
+
+    ; Repetir hasta que el valor sea 0
+    test ax, ax
+    jnz convert_to_string
+
+    ; Añadir terminador de cadena
+    mov byte ptr [di], 0
+
+    ; Invertir la cadena
+    lea si, input
+    sub di, 1      ; Ajustar di al último carácter de la cadena
+invert_string:
+    cmp si, di
+    jge done_invert
+    mov al, [si]
+    mov bl, [di]
+    mov [di], al
+    mov [si], bl
+    inc si
+    dec di
+    jmp invert_string
+
+done_invert:
+    ; Mostrar la cadena resultante
+    lea dx, input
+    mov ah, 9
+    int 21h
+
+    pop di
+    pop si
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+result_to_string endp
+
 end main
