@@ -196,7 +196,6 @@ print_newline proc
     ret
 print_newline endp
 
-; Función para convertir el resultado a una cadena de caracteres y mostrarla
 result_to_string proc
     push ax
     push bx
@@ -205,36 +204,41 @@ result_to_string proc
     push si
     push di
     
-    ; Buffer para almacenar la cadena resultante
-    lea di, input  ; Reutilizamos el buffer de entrada
-    xor cx, cx     ; Contador de dígitos
+    ; Limpiar el búfer de salida
+    lea di, input
+    mov cx, 100   ; Asumiendo que input tiene 100 bytes
+    mov al, 0     ; Llenar con ceros
+    rep stosb
+    
+    ; Reiniciar DI al inicio del búfer
+    lea di, input
+    mov cx, 10     ; Vamos a convertir 10 dígitos (máximo para 32 bits)
 
     ; Cargar el valor de result
-    mov ax, word ptr [result+2]
-    mov dx, word ptr [result]
+    mov ax, word ptr [result]
+    mov dx, word ptr [result+2]
 
 convert_to_string:
-    ; Dividir por 10
-    xor dx, dx     ; Limpiar dx antes de dividir
-    mov bx, 10
-    div bx         ; ax = ax:dx / 10, dx = residuo
+    ; Dividir el número de 32 bits por 10
+    push cx
+    mov cx, 10
+    call div32
+    pop cx
 
     ; Convertir el residuo en un carácter
-    add dl, '0'
-    mov [di], dl
+    add bl, '0'
+    mov [di], bl
     inc di
-    inc cx         ; Incrementar el contador de dígitos
 
-    ; Repetir hasta que el valor sea 0
-    test ax, ax
-    jnz convert_to_string
+    ; Repetir hasta que hayamos convertido todos los dígitos
+    loop convert_to_string
 
     ; Añadir terminador de cadena
-    mov byte ptr [di], 0
+    mov byte ptr [di], '$'  ; Usar '$' como terminador para DOS
 
     ; Invertir la cadena
     lea si, input
-    sub di, 1      ; Ajustar di al último carácter de la cadena
+    dec di      ; Ajustar di al último carácter de la cadena
 invert_string:
     cmp si, di
     jge done_invert
@@ -247,8 +251,17 @@ invert_string:
     jmp invert_string
 
 done_invert:
+    ; Eliminar ceros a la izquierda
+    lea si, input
+remove_leading_zeros:
+    cmp byte ptr [si], '0'
+    jne print_result_string
+    inc si
+    jmp remove_leading_zeros
+
+print_result_string:
     ; Mostrar la cadena resultante
-    lea dx, input
+    mov dx, si
     mov ah, 9
     int 21h
 
@@ -261,4 +274,23 @@ done_invert:
     ret
 result_to_string endp
 
-end main
+; Función para dividir un número de 32 bits por 10
+; Entrada: DX:AX = dividendo, CX = divisor (10)
+; Salida: DX:AX = cociente, BX = residuo
+div32 proc
+    push cx
+    xor bx, bx
+    mov cx, 32
+div32_loop:
+    shl ax, 1
+    rcl dx, 1
+    rcl bx, 1
+    cmp bx, 10
+    jb div32_skip
+    sub bx, 10
+    inc ax
+div32_skip:
+    loop div32_loop
+    pop cx
+    ret
+div32 endp
