@@ -33,11 +33,14 @@
     num1 dd ? 
     num2 dd ? 
     num3 dd ?    
-           
+    
+    ;num1ResD dd ? ; dw = 4 byte   
+    ;num2ResH dd ? ; para formar una respuesta de 8 bytes 
+    ;num2ResL dd ? ; para formar una respuesta de 8 bytes       
         
-    num1ResD dd ? ; dw = 4 byte   
-    num2ResH dd ? ; para formar una respuesta de 8 bytes 
-    num2ResL dd ? ; para formar una respuesta de 8 bytes
+    num1ResD dw 3 dup(0) ; dw = 4 byte   
+    num2ResH dw 3 dup(0) ; para formar una respuesta de 8 bytes 
+    num2ResL dw 3 dup(0) ; para formar una respuesta de 8 bytes
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -253,7 +256,7 @@ square_option:
     ; Leer entrada del usuario
     mov ah, 0Ah
     mov dx, offset input
-    mov byte ptr [input], 10  ; Máximo 99 caracteres
+    mov byte ptr [input], 99  ; Máximo 99 caracteres
     int 21h
 
     ; Agregar terminador de cadena
@@ -265,20 +268,25 @@ square_option:
     mov byte ptr [si], 0
 
     ; Inicializar el resultado a 0
-    xor ax, ax
-    mov word ptr [num1], ax
-    mov word ptr [num1+2], ax
+    mov word ptr [num1], 0
+    mov word ptr [num1+2], 0
+    mov word ptr [num1+4], 0
 
     ; Apuntar al inicio de la cadena de entrada
     lea si, input + 2
     xor cx, cx  ; Contador de iteraciones
 
 convert_loop:
+    ; Imprimir número de iteración
     inc cx
     push cx
+    ;mov dx, offset debug_msg
     mov ah, 9
+    ;int 21h
     pop cx
     mov ax, cx
+    ;call print_number
+    ;call print_newline
 
     ; Cargar el siguiente carácter
     mov al, [si]
@@ -295,23 +303,19 @@ convert_loop:
     sub al, '0'
 
     ; Multiplicar el resultado actual por 10
-    mov bx, 10
-    mov ax, word ptr [num1]
-    mul bx
-    mov word ptr [num1], ax
-    push dx
-    mov ax, word ptr [num1+2]
-    mul bx
-    pop bx
-    add ax, bx
-    mov word ptr [num1+2], ax
+    push ax
+    mov ax, 10
+    call mul48
+    pop ax
 
     ; Sumar el nuevo dígito
     xor ah, ah
-    mov al, [si]
-    sub al, '0'
-    add word ptr [num1], ax
+    add [num1], ax
     adc word ptr [num1+2], 0
+    adc word ptr [num1+4], 0
+
+    ; Imprimir el valor actual
+    ;call print_result
 
 skip_dot:
     ; Avanzar al siguiente carácter
@@ -328,7 +332,7 @@ done:
     ; Llama a la función para convertir el número de vuelta a una cadena
     call per_result_to_string
 
-    jmp end_program
+    ;jmp end_program
 
 
 rectangle_option:
@@ -948,6 +952,41 @@ productoEntrada1PorEntrada1 proc  ;hace num1*num1
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 
+
+; Función para multiplicar el resultado de 48 bits por AX
+mul48 proc
+    push bx
+    push cx
+    push dx
+
+    mov bx, ax  ; Guardar el multiplicador
+
+    mov ax, word ptr [num1]
+    mul bx
+    mov word ptr [num1], ax
+    mov cx, dx
+
+    mov ax, word ptr [num1+2]
+    mul bx
+    add ax, cx
+    mov word ptr [num1+2], ax
+    adc dx, 0
+    mov cx, dx
+
+    mov ax, word ptr [num1+4]
+    mul bx
+    add ax, cx
+    mov word ptr [num1+4], ax
+
+    pop dx
+    pop cx
+    pop bx
+    ret
+mul48 endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+
+
 ; Funcion para printear area
 ar_result_to_string proc
     push ax
@@ -965,56 +1004,60 @@ ar_result_to_string proc
     
     ; Reiniciar DI al inicio del búfer
     lea di, input
-    mov cx, 10     ; Vamos a convertir 10 dígitos (máximo para 32 bits)
+    mov cx, 15     ; Vamos a convertir hasta 15 dígitos (máximo para 48 bits)
 
-    ; Cargar el valor de result
+    ; Cargar el valor de result (48 bits)
     mov ax, word ptr [num2ResL+2]
-    mov dx, word ptr [num2ResL]
+    mov bx, word ptr [num2ResL]
+    mov dx, word ptr [num2ResL-4]
+
+    ; Guardar la posición inicial de la pila
+    mov si, sp
 
 ar_convert_to_string:
-    ; Dividir el número de 32 bits por 10
+    ; Dividir el número de 48 bits por 10
     push cx
     mov cx, 10
-    call div32
+    call div48
     pop cx
 
-    ; Convertir el residuo en un carácter
-    add bl, '0'
-    mov [di], bl
-    inc di
+    ; Convertir el residuo en un carácter y guardarlo
+    add di, '0'
+    push di
 
-    ; Repetir hasta que hayamos convertido todos los dígitos
+    ; Verificar si el cociente es cero
+    or ax, ax
+    jnz ar_continue_conversion
+    or bx, bx
+    jnz ar_continue_conversion
+    or dx, dx
+    jz ar_done_conversion
+
+ar_continue_conversion:
     loop ar_convert_to_string
 
+ar_done_conversion:
+    ; Ahora, DI apunta al final de la cadena invertida
+    ; Mover DI al inicio del búfer de salida
+    lea di, input
+
+ar_print_result_string:
+    ; Verificar si hemos procesado todos los caracteres
+    cmp sp, si
+    je ar_finish_string
+
+    ; Obtener el siguiente carácter (en orden inverso)
+    pop ax
+    mov [di], al  ; Colocarlo en el búfer de salida
+    inc di
+    jmp ar_print_result_string
+
+ar_finish_string:
     ; Añadir terminador de cadena
     mov byte ptr [di], '$'  ; Usar '$' como terminador para DOS
 
-    ; Invertir la cadena
-    lea si, input
-    dec di      ; Ajustar di al último carácter de la cadena
-ar_invert_string:
-    cmp si, di
-    jge ar_done_invert
-    mov al, [si]
-    mov bl, [di]
-    mov [di], al
-    mov [si], bl
-    inc si
-    dec di
-    jmp ar_invert_string
-
-ar_done_invert:
-    ; Eliminar ceros a la izquierda
-    lea si, input
-ar_remove_leading_zeros:
-    cmp byte ptr [si], '0'
-    jne ar_print_result_string
-    inc si
-    jmp ar_remove_leading_zeros
-
-ar_print_result_string:
     ; Mostrar la cadena resultante
-    mov dx, si
+    lea dx, input
     mov ah, 9
     int 21h
 
@@ -1026,11 +1069,9 @@ ar_print_result_string:
     pop ax
     ret
 ar_result_to_string endp
-; Función para dividir un número de 32 bits por 10
-; Entrada: DX:AX = dividendo, CX = divisor (10)
-; Salida: DX:AX = cociente, BX = residuo
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+
 
 ; Funcion para printear area
 per_result_to_string proc
@@ -1049,56 +1090,60 @@ per_result_to_string proc
     
     ; Reiniciar DI al inicio del búfer
     lea di, input
-    mov cx, 10     ; Vamos a convertir 10 dígitos (máximo para 32 bits)
+    mov cx, 15     ; Vamos a convertir hasta 15 dígitos (máximo para 48 bits)
 
-    ; Cargar el valor de result
+    ; Cargar el valor de result (48 bits)
     mov ax, word ptr [num1ResD+2]
-    mov dx, 0;word ptr [num1ResD]
+    mov bx, 0;word ptr [num2ResL]
+    ;mov dx, word ptr [num2ResL-4]
+
+    ; Guardar la posición inicial de la pila
+    mov si, sp
 
 per_convert_to_string:
-    ; Dividir el número de 32 bits por 10
+    ; Dividir el número de 48 bits por 10
     push cx
     mov cx, 10
-    call div32
+    call div48
     pop cx
 
-    ; Convertir el residuo en un carácter
-    add bl, '0'
-    mov [di], bl
-    inc di
+    ; Convertir el residuo en un carácter y guardarlo
+    add di, '0'
+    push di
 
-    ; Repetir hasta que hayamos convertido todos los dígitos
+    ; Verificar si el cociente es cero
+    or ax, ax
+    jnz per_continue_conversion
+    or bx, bx
+    jnz per_continue_conversion
+    or dx, dx
+    jz per_done_conversion
+
+per_continue_conversion:
     loop per_convert_to_string
 
+per_done_conversion:
+    ; Ahora, DI apunta al final de la cadena invertida
+    ; Mover DI al inicio del búfer de salida
+    lea di, input
+
+per_print_result_string:
+    ; Verificar si hemos procesado todos los caracteres
+    cmp sp, si
+    je per_finish_string
+
+    ; Obtener el siguiente carácter (en orden inverso)
+    pop ax
+    mov [di], al  ; Colocarlo en el búfer de salida
+    inc di
+    jmp per_print_result_string
+
+per_finish_string:
     ; Añadir terminador de cadena
     mov byte ptr [di], '$'  ; Usar '$' como terminador para DOS
 
-    ; Invertir la cadena
-    lea si, input
-    dec di      ; Ajustar di al último carácter de la cadena
-per_invert_string:
-    cmp si, di
-    jge per_done_invert
-    mov al, [si]
-    mov bl, [di]
-    mov [di], al
-    mov [si], bl
-    inc si
-    dec di
-    jmp per_invert_string
-
-per_done_invert:
-    ; Eliminar ceros a la izquierda
-    lea si, input
-per_remove_leading_zeros:
-    cmp byte ptr [si], '0'
-    jne per_print_result_string
-    inc si
-    jmp per_remove_leading_zeros
-
-per_print_result_string:
     ; Mostrar la cadena resultante
-    mov dx, si
+    lea dx, input
     mov ah, 9
     int 21h
 
@@ -1109,19 +1154,13 @@ per_print_result_string:
     pop bx
     pop ax
     ret
-per_result_to_string endp 
+per_result_to_string endp
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 
 ; Función para dividir un número de 32 bits por 10
 ; Entrada: DX:AX = dividendo, CX = divisor (10)
 ; Salida: DX:AX = cociente, BX = residuo
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
-
 div32 proc
     push cx
     xor bx, bx
@@ -1139,5 +1178,33 @@ div32_skip:
     pop cx
     ret
 div32 endp
+
+div48 proc
+    push si
+    xor si, si
+    mov di, 48
+
+div48_loop:
+    shl ax, 1
+    rcl bx, 1
+    rcl dx, 1
+    rcl si, 1
+    cmp si, cx
+    jb div48_skip
+    sub si, cx
+    inc ax
+
+div48_skip:
+    dec di
+    jnz div48_loop
+
+    mov di, si  ; Residuo en DI
+    and di, 0Fh  ; Asegurarse de que el residuo esté en el rango 0-9
+    pop si
+    ret
+div48 endp
+
+
+
 
 end main
