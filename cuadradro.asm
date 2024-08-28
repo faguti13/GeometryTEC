@@ -2,26 +2,24 @@
 .stack 100h
 
 .data ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-    input db 100 dup(0)    ; Buffer para la entrada del usuario
-    ;result dd ?            ; Resultado de 32 bits
-    newline db 13, 10, '$' ; Para imprimir nueva línea
-    
-    square_side_msg db 'Por favor ingrese el tama', 0A4h, 'o del lado del cuadrado. $', 0Dh, 0Ah, '$'
-
-    
     msj1 db 'El perimetro es de: $'
     msj2 db 'El area es de: $'
     
-    num1 dd ? ; FALTA LA FUNCION PARA QUE ESTOS VALORES SEAN LAS ENTREDAS (PASAR DE ASCII A NUM)  
-    num2 dd 37 
-    num3 dd 50321    
+    num1 dd 999999; FALTA LA FUNCION PARA QUE ESTOS VALORES SEAN LAS ENTREDAS (PASAR DE ASCII A NUM)  
+    num2 dd 200
+    num3 dd 14520
+    num4 dd 208956
+    num5 dd 10584
            
-        
-    num1ResD dd ? ; dw = 4 byte   
+    num1ResD dd ? ;   
     num2ResH dd ? ; para formar una respuesta de 8 bytes 
-    num2ResL dd ? ; para formar una respuesta de 8 bytes
+    num2ResL dd ? ; para formar una respuesta de 8 bytes 
+    num3ResH dd ? ; para formar una respuesta de 8 bytes 
+    num3ResL dd ? ; para formar una respuesta de 8 bytes 
+    num3ResF dw ?
+    
+    bufferResp1 db 10 dup('0'), '$'    
+    ;bufferResp1 db 11 dup('$')  ; Reserva en 11 byte, cabe un num de 32 bits 
 
    
 .code ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -36,141 +34,274 @@ main proc
     ;call areaCuadradro 
     ;call perimetroRect 
     ;call areaRect 
-    ;call perimetroPen
-    ;call perimetroParale
-    ;call areaParale
-    
-    
+    ;call perimetroPent ;llama automaticamente al area tambien 
+    ;call perimetroHex ;llama automaticamente al area tambien
+    ;call perimetroTrapecio 
+    ;call perimetroCirculo 
+    ;call areaCirculo
+    ;call perimetroParalelogramo
+    ;call areaParalelogramo
+    ;call perimetroTrian
+    ;call areaTriangulo
+    ;call perimetroRombo
+    call areaRombo
        
-    ; Mostrar prompt
-    mov dx, offset square_side_msg
-    mov ah, 9
-    int 21h
-    
-    mov ah, 09h
-    lea dx, newline
-    int 21h
-
-    ; Leer entrada del usuario
-    mov ah, 0Ah
-    mov dx, offset input
-    mov byte ptr [input], 99  ; Máximo 99 caracteres
-    int 21h
-
-    ; Agregar terminador de cadena
-    mov si, offset input + 1
-    mov cl, [si]  ; Longitud de la cadena
-    xor ch, ch
-    inc si
-    add si, cx
-    mov byte ptr [si], 0
-
-    ; Inicializar el resultado a 0
-    xor ax, ax
-    mov word ptr [num1], ax
-    mov word ptr [num1+2], ax
-
-    ; Apuntar al inicio de la cadena de entrada
-    lea si, input + 2
-    xor cx, cx  ; Contador de iteraciones
-
-convert_loop:
-    inc cx
-    push cx
-    mov ah, 9
-    pop cx
-    mov ax, cx
-    ;call print_number
-    ;call print_newline
-
-    ; Cargar el siguiente carácter
-    mov al, [si]
-    
-    ; Verificar si hemos llegado al final de la cadena
-    cmp al, 0
-    je done
-
-    ; Verificar si el carácter es un punto decimal y omitirlo
-    cmp al, '.'
-    je skip_dot
-
-    ; Convertir ASCII a número
-    sub al, '0'
-
-    ; Multiplicar el resultado actual por 10
-    mov bx, 10
-    mov ax, word ptr [num1]
-    mul bx
-    mov word ptr [num1], ax
-    push dx
-    mov ax, word ptr [num1+2]
-    mul bx
-    pop bx
-    add ax, bx
-    mov word ptr [num1+2], ax
-
-    ; Sumar el nuevo dígito
-    xor ah, ah
-    mov al, [si]
-    sub al, '0'
-    add word ptr [num1], ax
-    adc word ptr [num1+2], 0
-
-    ; Imprimir el valor actual
-    ;call print_result
-
-skip_dot:
-    ; Avanzar al siguiente carácter
-    inc si
-    jmp convert_loop
-
-done:
-    ; Imprimir el resultado final
-    ;mov dx, offset newline
-    ;mov ah, 9
-    ;int 21h
-
-    
-    call areaCuadradro
-    ; Llama a la función para convertir el número de vuelta a una cadena
-    call result_to_string
-    
-    
-     
-    call perimetroCuadrado
-    ; Llama a la función para convertir el número de vuelta a una cadena
-    call result_to_string
-    
-        
     ; Terminar el programa
-    mov ax, 4c00h
+    mov ah, 4Ch
     int 21h
-
-
-main endp
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
-
-perimetroPent proc ; num1 = lado   
      
+    main endp 
+ 
+ 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
+; Rombo; num1= diagonal mayor, num2= diagonal menor, num3 = a
+
+perimetroRombo proc  ; a = num3
+    
     ;parte baja  
-    mov ax, word ptr [num1]
-    mov cx, 5
+    mov ax, word ptr [num3]
+    mov cx, 4
     mul cx ; queda en DX:AX 
     mov [num1ResD+2], ax
     mov [num1ResD], dx
    
     ;parte alta
-    mov ax, word ptr [num1+2]
-    mov cx, 5
+    mov ax, word ptr [num3+2]
+    mov cx, 4
     mul cx ; result solo queda en AX  
     add [num1ResD], ax 
     
     mov ax, [num1ResD] ;QUITAR DESPUES, solo es para verificar
-    mov bx, [num1ResD+2] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num1ResD+2] ;QUITAR DESPUES, solo es para verificar  
+    
+    ; Imprimir el mensaje del perimetro
+    lea dx, msj1
+    call imprimir 
+    
+    ;Imprimir el perimetro calculado
+    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
+    ret
+    perimetroRombo endp
+ 
+ 
+areaRombo proc   ; num1= diagonal mayor, num2= diagonal menor
+     
+    ; diagonal mayor* menor
+    call productoEntrada1PorEntrada2 ; en este caso diagonal mayor* menor(num1*num2)
+    ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
       
-    mov [num2+2], bx ;para guardar el perimetro ya calculado en num2
-    mov [num2], ax  
+    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar
+    
+    ; dividir entre dos (D*d)/2 
+    call divNumDe64bitsEntreDos ; divide entre dos el num [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
+    ; el result queda en [num3ResH]+[num3ResH+2]+[num3ResL]+[num3ResL+2] y la parte fraccional en [num3ResF]
+    
+    mov ax, [num3ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num3ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num3ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num3ResL+2] ;QUITAR DESPUES, solo es para verificar
+    mov ax, [num3ResF] ;QUITAR DESPUES, solo es para verificar
+    
+    ret
+    areaRombo endp 
+ 
+ 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
+; TRIANGULO; num1= altura, num2= lado
+
+perimetroTrian proc  ; lado = num2
+    
+    ;parte baja  
+    mov ax, word ptr [num2]
+    mov cx, 3
+    mul cx ; queda en DX:AX 
+    mov [num1ResD+2], ax
+    mov [num1ResD], dx
+   
+    ;parte alta
+    mov ax, word ptr [num2+2]
+    mov cx, 3
+    mul cx ; result solo queda en AX  
+    add [num1ResD], ax 
+    
+    mov ax, [num1ResD] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num1ResD+2] ;QUITAR DESPUES, solo es para verificar  
+    
+    ; Imprimir el mensaje del perimetro
+    lea dx, msj1
+    call imprimir 
+    
+    ;Imprimir el perimetro calculado
+    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
+    ret
+    perimetroTrian endp
+ 
+ 
+areaTriangulo proc 
+     
+    ; lado * altura
+    call productoEntrada1PorEntrada2 ; en este caso altura * altura (num1*num2)
+    ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
+      
+    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar
+    
+    ; dividir entre dos (l*h)/2 
+    call divNumDe64bitsEntreDos ; divide entre dos el num [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
+    ; el result queda en [num3ResH]+[num3ResH+2]+[num3ResL]+[num3ResL+2] y la parte fraccional en [num3ResF]
+    
+    mov ax, [num3ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num3ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num3ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num3ResL+2] ;QUITAR DESPUES, solo es para verificar
+    mov ax, [num3ResF] ;QUITAR DESPUES, solo es para verificar
+    
+    ret
+    areaTriangulo endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
+; Trapecio; num1= altura, num2= (B+b);  num3= lado; num4= base mayor, num5= base menor 
+
+perimetroTrapecio proc  ; num4= base mayor, num5= base menor; num3= lado;  B+b+l+l
+     
+    ;B+B
+    ;parte baja Base + parte baja base  (B+b)
+    mov ax, word ptr [num4]
+    mov bx, word ptr [num5]
+    xor cx, cx ; preparar para el acarreo 
+    add ax, bx 
+    ;manejar el acarreo. ADC (Add with Carry): suma dos operandos junto con el valor del flag de acarreo (CF).
+    adc cx, 0       ; CX = 1 si CF = 1, CX = 0 si CF = 0
+    mov [num1ResD], ax  ;parte baja 
+    mov [num1ResD+2], cx  ;parte baja   
+    
+    ;parte alta Base + parte alta base  (B+B) 
+    mov ax, word ptr [num4+2]
+    mov cx, word ptr [num5+2]
+    add ax, cx    
+    add [num1ResD+2],ax  ;parte alta 
+    
+    mov ax, [num1ResD+2] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num1ResD] ;QUITAR DESPUES, solo es para verificar 
+    
+    mov [num2+2], ax  ; guarda en num2 el resul de B+h (num4+num5)(esta parte se necesita en el area tambien)
+    mov [num2], bx 
+    
+    mov cx, [num2] ;;;;;;;;; VER
+    mov dx, [num2+2]
+    
+    ;l+l = l*2  ; l=num3
+    ;parte baja * 2;  2*(l)
+    mov ax, word ptr [num3]
+    mov cx, 2
+    mul cx ; queda en DX:AX 
+    mov [num2ResH+2], ax  
+    mov [num2ResH], dx  
+    
+    ;parte alta * 2;  2*(l)
+    mov ax, word ptr [num3+2]
+    mov cx, 2
+    mul cx ; queda solo en AX 
+    add [num2ResH], ax 
+    
+    mov ax, [num2ResH+2] ; QUITAR DESPUES, solo es para verificar
+    mov bx, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    
+    ;(B+B)+(l*2)
+    ;parte baja (B+B) + parte (l*2) 
+    mov ax, word ptr [num2]
+    mov bx, word ptr [num2ResH+2]
+    xor cx, cx ; preparar para el acarreo 
+    add ax, bx 
+    ;manejar el acarreo. ADC (Add with Carry): suma dos operandos junto con el valor del flag de acarreo (CF).
+    adc cx, 0       ; CX = 1 si CF = 1, CX = 0 si CF = 0
+    mov [num1ResD], ax  ;parte baja 
+    mov [num1ResD+2], cx  ;parte baja   
+    
+    ;parte alta (B+b) + parte alta (l*2)  (B+B) 
+    mov ax, word ptr [num2+2]
+    mov cx, word ptr [num2ResH]
+    add ax, cx    
+    add [num1ResD+2],ax  ;parte alta 
+    
+    mov ax, [num1ResD+2] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num1ResD] ;QUITAR DESPUES, solo es para verificar 
+    
+    ; Imprimir el mensaje del area
+    lea dx, msj2
+    call imprimir
+    
+    ;Imprimir el area calculada
+    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
+     
+     
+     
+    mov [num2ResH], 0  ;se necesita en 0 para el result del area 
+    mov [num2ResH+2], 0      
+    
+    call areaTrapecio
+    
+    ret
+    perimetroTrapecio endp
+
+areaTrapecio proc  ;num1= altura, num2= (B+b)
+; antes de llamar a areaTrapecio se tiene que llamar a perimetroPent, para tener el valor de num2  
+     
+    ; (B+b) * altura h
+    call productoEntrada1PorEntrada2 ; en este caso altura*(B+b) (num1*num2)
+    ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
+      
+    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar
+    
+    ; dividir entre dos (p*a)/2 
+    call divNumDe64bitsEntreDos ; divide entre dos el num [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
+    ; el result queda en [num3ResH]+[num3ResH+2]+[num3ResL]+[num3ResL+2] y la parte fraccional en [num3ResF]
+    
+    mov ax, [num3ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num3ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num3ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num3ResL+2] ;QUITAR DESPUES, solo es para verificar
+    mov ax, [num3ResF] ;QUITAR DESPUES, solo es para verifica  
+      
+    ret
+    areaTrapecio endp  
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
+; Hexagono num1 = apotema, num2 = perimetro, num3 = lado
+
+perimetroHex proc ; num3 = lado    
+     
+    ;parte baja  
+    mov ax, word ptr [num3]
+    mov cx, 6
+    mul cx ; queda en DX:AX 
+    mov [num1ResD+2], ax
+    mov [num1ResD], dx
+   
+    ;parte alta
+    mov ax, word ptr [num3+2]
+    mov cx, 6
+    mul cx ; result solo queda en AX  
+    add [num1ResD], ax 
+    
+    mov ax, [num1ResD] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num1ResD+2] ;QUITAR DESPUES, solo es para verificar  
+    
+    mov [num2+2], ax  ; guarda en num2 el resul del perimetro (necesario para el area)
+    mov [num2], bx 
+    
+    mov cx, [num2] ;;;;;;;;; VER
+    mov dx, [num2+2]
+    
     ; Imprimir el mensaje del perimetro
     lea dx, msj1
     call imprimir 
@@ -178,33 +309,256 @@ perimetroPent proc ; num1 = lado
     ;Imprimir el perimetro calculado
     ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
     
+    call areaHex
+    
     ret 
-    perimetroPent endp
+    
+    perimetroHex endp
 
-areaPent proc ; num1 = lado; num3 = apotema; num2= perimetro 
-    
-    
-    call productoEntrada1PorEntrada2 ; en este caso lado*altura (num1*num2)
+areaHex proc  ;num1 = apotema, num2 = perimetro, num3 = lado
+    ; antes de llamar a areaPent se tiene que llamar a perimetroPent, para tener el valor de num2  
+     
+    ; perimetro * apotema
+    call productoEntrada1PorEntrada2 ; en este caso apotema*perimetro (num1*num2)
     ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
-  
+      
     mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
     mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
     mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
-    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar   
+    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar
+    
+    ; dividir entre dos (p*a)/2 
+    call divNumDe64bitsEntreDos ; divide entre dos el num [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
+    ; el result queda en [num3ResH]+[num3ResH+2]+[num3ResL]+[num3ResL+2] y la parte fraccional en [num3ResF]
+    
+    mov ax, [num3ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num3ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num3ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num3ResL+2] ;QUITAR DESPUES, solo es para verificar
+    mov ax, [num3ResF] ;QUITAR DESPUES, solo es para verifica  
+    
+    ret
+    areaHex endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;PARALELOGRAMO  num1=h, num2=base , num3=a
+
+perimetroParalelogramo proc  
+     
+    ;parte baja base + parte baja altura  (b+a)
+    mov ax, word ptr [num3]
+    mov bx, word ptr [num2]
+    xor cx, cx ; preparar para el acarreo 
+    add ax, bx 
+    ;manejar el acarreo. ADC (Add with Carry): suma dos operandos junto con el valor del flag de acarreo (CF).
+    adc cx, 0       ; CX = 1 si CF = 1, CX = 0 si CF = 0
+    mov [num1ResD], ax  ;parte baja 
+    mov [num1ResD+2], cx  ;parte baja   
+    
+    ;parte alta base + parte alta altura  (b+h) 
+    mov ax, word ptr [num3+2]
+    mov cx, word ptr [num2+2]
+    add ax, cx    
+    add [num1ResD+2],ax  ;parte alta 
+    
+    ;parte baja * 2;  2*(b+h)
+    mov ax, word ptr [num1ResD]
+    mov cx, 2
+    mul cx ; queda en DX:AX 
+    mov [num2ResH+2], ax  
+    mov [num2ResH], dx  
+    
+    ;parte alta * 2;  2*(b+h)
+    mov ax, word ptr [num1ResD+2]
+    mov cx, 2
+    mul cx ; queda solo en AX 
+    add [num2ResH], ax 
+    
+    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
+      
+    ; Imprimir el mensaje del area
+    lea dx, msj2
+    call imprimir
+    
+    ;Imprimir el area calculada
+    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII  
+       
+    ret
+    perimetroParalelogramo endp
+
+areaParalelogramo proc ; num1 = h, num2=  base 
+          
+    ; h*base 
+    call productoEntrada1PorEntrada2 ; en este caso h*base (num1*num2)
+    ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
+      
+    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar
+    ret
+    areaParalelogramo endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CIRCULO  num1 = radio
+
+perimetroCirculo proc ;num1 = radio  
+    
+    ;parte baja * 2;  2*r
+    mov ax, word ptr [num1]
+    mov cx, 2
+    mul cx ; queda en DX:AX 
+    mov [num2ResH+2], ax  
+    mov [num2ResH], dx  
+    
+    ;parte alta * 2;  2*r
+    mov ax, word ptr [num1+2]
+    mov cx, 2
+    mul cx ; queda solo en AX 
+    add [num2ResH], ax 
+    
+    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num2ResH+2] 
+    
+    ;parte baja * 314 / se toma 3.14 como entero despues en el result se divide 
+    mov ax, word ptr [num2ResH+2]
+    mov cx, 314
+    mul cx ; queda en DX:AX 
+    mov [num1ResD+2], ax  
+    mov [num1ResD], dx 
+    
+    ;parte alta * 314 / se toma 3.14 como entero despues en el result se divide  
+    mov ax, word ptr [num2ResH]
+    mov cx, 314
+    mul cx ; queda en DX:AX 
+    add [num1ResD], ax
+    
+    mov ax, [num1ResD] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num1ResD+2]
+    
+    ret
+    perimetroCirculo endp
+
+
+areaCirculo proc ; num1= radio 
+    
+    ;hacer r*r   
+    call productoEntrada1PorEntrada1 ; en este caso radio*radio (num1*num1)
+    ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
+    
+    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar  
+    
+    ;hacer 3.14 * (l*l)
+    ;parte baja * 314 / se toma 3.14 como entero despues en el result se divide 
+    mov ax, word ptr [num2ResL+2]
+    mov cx, 314
+    mul cx ; queda en DX:AX 
+    mov [num3ResL+2], ax  
+    mov [num3ResL], dx 
+    
+    ;parte alta * 314 / se toma 3.14 como entero despues en el result se divide  
+    mov ax, word ptr [num2ResL]
+    mov cx, 314
+    mul cx ; queda en DX:AX 
+    add [num3ResL], ax
+    mov [num3ResH+2], bx
+    
+    ;parte baja * 314 / se toma 3.14 como entero despues en el result se divide 
+    mov ax, word ptr [num2ResH+2]
+    mov cx, 314
+    mul cx ; queda en DX:AX 
+    add [num3ResH+2], ax  
+    mov [num3ResH], dx 
+    
+    ;parte alta * 314 / se toma 3.14 como entero despues en el result se divide  
+    mov ax, word ptr [num2ResH]
+    mov cx, 314
+    mul cx ; queda en DX:AX 
+    add [num3ResH], ax
+    
+    mov ax, [num3ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num3ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num3ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num3ResL+2] ;QUITAR DESPUES, solo es para verificar 
     
     ; Imprimir el mensaje del area
     lea dx, msj2
     call imprimir
     
+    ;Imprimir el area calculada
+    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
+   
+    ret
+    areaCirculo endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
+; Pentagono num1 = apotema, num2 = perimetro, num3 = lado
+
+perimetroPent proc ; num3 = lado    
+     
+    ;parte baja  
+    mov ax, word ptr [num3]
+    mov cx, 5
+    mul cx ; queda en DX:AX 
+    mov [num1ResD+2], ax
+    mov [num1ResD], dx
+   
+    ;parte alta
+    mov ax, word ptr [num3+2]
+    mov cx, 5
+    mul cx ; result solo queda en AX  
+    add [num1ResD], ax 
     
+    mov ax, [num1ResD] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num1ResD+2] ;QUITAR DESPUES, solo es para verificar  
     
+    mov [num2+2], ax  ; guarda en num2 el resul del perimetro (necesario para el area)
+    mov [num2], bx 
     
+    mov cx, [num2] ;;;;;;;;; VER
+    mov dx, [num2+2]
     
+    ; Imprimir el mensaje del perimetro
+    lea dx, msj1
+    call imprimir 
     
+    ;Imprimir el perimetro calculado
+    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
+    
+    call areaPent
+    
+    ret 
+    
+    perimetroPent endp
+
+areaPent proc  ;num1 = apotema, num2 = perimetro, num3 = lado
+    ; antes de llamar a areaPent se tiene que llamar a perimetroPent, para tener el valor de num2  
+     
+    ; perimetro * apotema
+    call productoEntrada1PorEntrada2 ; en este caso apotema*perimetro (num1*num2)
+    ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
+      
+    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar
+    
+    ; dividir entre dos (p*a)/2 
+    call divNumDe64bitsEntreDos ; divide entre dos el num [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
+    ; el result queda en [num3ResH]+[num3ResH+2]+[num3ResL]+[num3ResL+2] y la parte fraccional en [num3ResF]
+    
+    mov ax, [num3ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num3ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num3ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num3ResL+2] ;QUITAR DESPUES, solo es para verificar
+    mov ax, [num3ResF] ;QUITAR DESPUES, solo es para verifica  
     
     ret
     areaPent endp
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -228,10 +582,6 @@ perimetroCuadrado proc ; num1 = lado
     mov ax, [num1ResD] ;QUITAR DESPUES, solo es para verificar
     mov bx, [num1ResD+2] ;QUITAR DESPUES, solo es para verificar
     
-    mov ah, 09h
-    lea dx, newline
-    int 21h
-    
     ; Imprimir el mensaje del perimetro
     lea dx, msj1
     call imprimir 
@@ -247,15 +597,10 @@ areaCuadradro proc ; num1 = lado
     call productoEntrada1PorEntrada1 ; en este caso lado*lado (num1*num1)
     ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
     
-    ;mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
-    ;mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
-    ;mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
-    ;mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar   
-    
-    mov ah, 09h
-    lea dx, newline
-    int 21h
-    
+    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
+    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
+    mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
+    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar   
     
     ; Imprimir el mensaje del area
     lea dx, msj2
@@ -272,18 +617,43 @@ areaCuadradro proc ; num1 = lado
 
 perimetroRect proc ; num1= base, num2= altura
     
-    call DosVecesNum1MasNum2
+    ;parte baja base + parte baja altura  (b+h)
+    mov ax, word ptr [num1]
+    mov bx, word ptr [num2]
+    xor cx, cx ; preparar para el acarreo 
+    add ax, bx 
+    ;manejar el acarreo. ADC (Add with Carry): suma dos operandos junto con el valor del flag de acarreo (CF).
+    adc cx, 0       ; CX = 1 si CF = 1, CX = 0 si CF = 0
+    mov [num1ResD], ax  ;parte baja 
+    mov [num1ResD+2], cx  ;parte baja   
+    
+    ;parte alta base + parte alta altura  (b+h) 
+    mov ax, word ptr [num1+2]
+    mov cx, word ptr [num2+2]
+    add ax, cx    
+    add [num1ResD+2],ax  ;parte alta 
+    
+    ;parte baja * 2;  2*(b+h)
+    mov ax, word ptr [num1ResD]
+    mov cx, 2
+    mul cx ; queda en DX:AX 
+    mov [num2ResH+2], ax  
+    mov [num2ResH], dx  
+    
+    ;parte alta * 2;  2*(b+h)
+    mov ax, word ptr [num1ResD+2]
+    mov cx, 2
+    mul cx ; queda solo en AX 
+    add [num2ResH], ax 
     
     mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
     mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
-    
+      
     ; Imprimir el mensaje del area
     lea dx, msj2
     call imprimir
     
-    ;Imprimir el area calculada
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
-      
+    
     ret
     perimetroRect endp  
 
@@ -306,54 +676,15 @@ areaRect proc ; num1= base, num2= altura
      
     ret
     areaRect endp
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;PARALELOGRAMO
-
-perimetroParale proc ; num1= base, num2= altura
-    
-    call DosVecesNum1MasNum2
-    
-    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
-    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
-    
-    ; Imprimir el mensaje del area
-    lea dx, msj2
-    call imprimir
-    
-    ;Imprimir el area calculada
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
-      
-    ret
-    perimetroParale endp
-
-
-areaParale proc
-    call productoEntrada1PorEntrada2
-    
-    mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
-    mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
-    mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
-    mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar   
-    
-    ; Imprimir el mensaje del area
-    lea dx, msj2
-    call imprimir
-    
-    ;Imprimir el area calculada
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
-     
-    ret
- 
-areaParale endp    
     
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 ; PROCEDIMIENTOS GENERALES 
 
 imprimir proc
-    mov ah, 09h ; 09h: imprime una cadena, imprime la dirección de DX por defecto
+    mov ah, 09h ; 09h: imprime una cadena, imprime la direcci?n de DX por defecto
     int 21h
     ret
-    imprimir endp
+    imprimir endp 
 
 productoEntrada1PorEntrada1 proc  ;hace num1*num1
     ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
@@ -394,7 +725,7 @@ productoEntrada1PorEntrada1 proc  ;hace num1*num1
     add [num2ResH], dx
     
     ret
-    productoEntrada1PorEntrada1 endp
+    productoEntrada1PorEntrada1 endp    
 
 productoEntrada1PorEntrada2 proc  ;hace num1*num2
     ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
@@ -432,201 +763,72 @@ productoEntrada1PorEntrada2 proc  ;hace num1*num2
     add [num2ResH], dx     
         
     ret
-    productoEntrada1PorEntrada2 endp     
+    productoEntrada1PorEntrada2 endp   
 
-
-
-DosVecesNum1MasNum2 proc ; num1= base, num2= altura
+divNumDe64bitsEntreDos proc ; divide entre dos el num [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2] 
+    ; el result queda en [num3ResH]+[num3ResH+2]+[num3ResL]+[num3ResL+2] y la parte fraccional en [num3ResF]
     
-    ;parte baja base + parte baja altura  (b+h)
-    mov ax, word ptr [num1]
-    mov bx, word ptr [num2]
-    xor cx, cx ; preparar para el acarreo 
-    add ax, bx 
-    ;manejar el acarreo. ADC (Add with Carry): suma dos operandos junto con el valor del flag de acarreo (CF).
-    adc cx, 0       ; CX = 1 si CF = 1, CX = 0 si CF = 0
-    mov [num1ResD], ax  ;parte baja 
-    mov [num1ResD+2], cx  ;parte baja   
-    
-    ;parte alta base + parte alta altura  (b+h) 
-    mov ax, word ptr [num1+2]
-    mov cx, word ptr [num2+2]
-    add ax, cx    
-    add [num1ResD+2],ax  ;parte alta 
-    
-    ;parte baja * 2;  2*(b+h)
-    mov ax, word ptr [num1ResD]
-    mov cx, 2
-    mul cx ; queda en DX:AX 
-    mov [num2ResH+2], ax  
-    mov [num2ResH], dx  
-    
-    ;parte alta * 2;  2*(b+h)
-    mov ax, word ptr [num1ResD+2]
-    mov cx, 2
-    mul cx ; queda solo en AX 
-    add [num2ResH], ax 
-      
-    ret
-    DosVecesNum1MasNum2 endp 
-  
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
-
-
-
-; Función para imprimir el resultado actual en hexadecimal
-print_result proc
-    push ax
-    push dx
-    mov dx, word ptr [num2ResL+2]
-    call print_word
-    mov dx, word ptr [num2ResL]
-    call print_word
-    call print_newline
-    pop dx
-    pop ax
-    ret
-print_result endp
-; Función para imprimir una palabra (16 bits) en hexadecimal
-print_word proc
-    push ax
-    push cx
-    mov ax, dx
-    mov cl, 12
-    call print_nibble
-    mov cl, 8
-    call print_nibble
-    mov cl, 4
-    call print_nibble
-    mov cl, 0
-    call print_nibble
-    pop cx
-    pop ax
-    ret
-print_word endp
-; Función para imprimir un nibble (4 bits)
-print_nibble proc
-    push ax
-    push dx
-    mov dx, ax
-    shr dx, cl
-    and dl, 0Fh
-    add dl, '0'
-    cmp dl, '9'
-    jle print_digit
-    add dl, 7
-print_digit:
-    mov ah, 2
-    int 21h
-    pop dx
-    pop ax
-    ret
-print_nibble endp
-; Función para imprimir un número decimal
-print_number proc
-    push ax
-    push bx
-    push cx
-    push dx
-    mov bx, 10
-    xor cx, cx
-convert_to_decimal:
     xor dx, dx
-    div bx
-    push dx
-    inc cx
-    test ax, ax
-    jnz convert_to_decimal
-print_decimal:
-    pop dx
-    add dl, '0'
-    mov ah, 2
-    int 21h
-    loop print_decimal
-    pop dx
-    pop cx
-    pop bx
-    pop ax
-    ret
-print_number endp
-; Función para imprimir nueva línea
-print_newline proc
-    push ax
-    push dx
-    mov dx, offset newline
-    mov ah, 9
-    int 21h
-    pop dx
-    pop ax
-    ret
-print_newline endp
-
-; Función para convertir el resultado a una cadena de caracteres y mostrarla
-result_to_string proc
-    push ax
-    push bx
-    push cx
-    push dx
-    push si
-    push di
+    mov ax, [num2ResH]
+    mov cx, 2 ; AX=cociente, dX=residuo
+    div cx
+    mov [num3ResH], ax
+    cmp dx, 0
+    jz acarreo ; si no hay 'acarreo' (cuando DX=0)
     
-    ; Buffer para almacenar la cadena resultante
-    lea di, input  ; Reutilizamos el buffer de entrada
-    xor cx, cx     ; Contador de dígitos
-
-    ; Cargar el valor de result
-    mov ax, word ptr [num2ResL+2]
-    mov dx, word ptr [num2ResL]
-
-convert_to_string:
-    ; Dividir por 10
-    xor dx, dx     ; Limpiar dx antes de dividir
-    mov bx, 10
-    div bx         ; ax = ax:dx / 10, dx = residuo
-
-    ; Convertir el residuo en un carácter
-    add dl, '0'
-    mov [di], dl
-    inc di
-    inc cx         ; Incrementar el contador de dígitos
-
-    ; Repetir hasta que el valor sea 0
-    test ax, ax
-    jnz convert_to_string
-
-    ; Añadir terminador de cadena
-    mov byte ptr [di], 0
-
-    ; Invertir la cadena
-    lea si, input
-    sub di, 1      ; Ajustar di al último carácter de la cadena
-invert_string:
-    cmp si, di
-    jge done_invert
-    mov al, [si]
-    mov bl, [di]
-    mov [di], al
-    mov [si], bl
-    inc si
-    dec di
-    jmp invert_string
-
-done_invert:
-    ; Mostrar la cadena resultante
-    lea dx, input
-    mov ah, 9
-    int 21h
-
-    pop di
-    pop si
-    pop dx
-    pop cx
-    pop bx
-    pop ax
+    ;multiplicar para ajustar 
+    mov ax, 8
+    mov cx, 1000h
+    mul cx ;producto solo en AX
+    mov [num3ResH+2], ax  
+     
+    acarreo: 
+        xor dx, dx
+        mov ax, [num2ResH+2]
+        mov cx, 2 ; AX=cociente, dX=residuo
+        div cx
+        add [num3ResH+2], ax
+        
+        cmp dx, 0h
+        jz acarreoDos ; si no hay 'acarreo' (cuando DX=0)
+        
+        ;multiplicar para ajustar 
+        mov ax, 8 
+        mov cx, 1000h
+        mul cx ;producto solo en AX
+        mov [num3ResL], ax
+         
+    acarreoDos:
+        xor dx, dx
+        mov ax, [num2ResL]
+        mov cx, 2 ; AX=cociente, dX=residuo
+        div cx
+        add [num3ResL], ax  
+        
+        cmp dx, 0
+        jz acarreoTres ; si no hay 'acarreo' (cuando DX=0)
+        
+        ;multiplicar para ajustar 
+        mov ax, 8
+        mov cx, 1000h
+        mul cx ;producto solo en AX
+        mov [num3ResL+2], ax
+    
+    acarreoTres:
+        xor dx, dx
+        mov ax, [num2ResL+2]
+        mov cx, 2 ; AX=cociente, dX=residuo
+        div cx
+        add [num3ResL+2], ax
+        
+        mov bx, [num3ResL+2]
+        
+        mov [num3ResF], dx
+    
     ret
-result_to_string endp
-
-
+    divNumDe64bitsEntreDos endp
+    
+  
  
-end main
+end main  
+
