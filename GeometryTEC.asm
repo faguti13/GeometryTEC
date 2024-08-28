@@ -17,31 +17,21 @@
 ;Segmento de datos
 .data
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
     input db 100 dup(0)    ; Buffer para la entrada del usuario
     newline db 13, 10, '$' ; Para imprimir nueva línea
-    
-    ;square_side_msg db 'Por favor ingrese el tama', 0A4h, 'o del lado del cuadrado. $', 0Dh, 0Ah, '$'
-
-    
+                                                                                                          
     msj1 db ' y el perimetro es de: $'
     msj2 db 'El area es de: $'
     
     num1 dd ? 
     num2 dd ? 
     num3 dd ?    
-    
-    ;num1ResD dd ? ; dw = 4 byte   
-    ;num2ResH dd ? ; para formar una respuesta de 8 bytes 
-    ;num2ResL dd ? ; para formar una respuesta de 8 bytes       
-        
+            
     num1ResD dw 3 dup(0) ; dw = 4 byte   
     num2ResH dw 3 dup(0) ; para formar una respuesta de 8 bytes 
     num2ResL dw 3 dup(0) ; para formar una respuesta de 8 bytes
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -68,7 +58,6 @@ buffer db 8
 
 ;Mensajes del cuadrado
 square_side_msg db 'Por favor ingrese el tama', 0A4h, 'o del lado del cuadrado. $', 0Dh, 0Ah, '$'
-square_results_msg db 'El area del cuadrado es: ','',' y su perimetro','','.', 0Dh, 0Ah, '$'
 
 ;Mensajes del rectangulo
 rectangle_side_msg db 'Por favor ingrese el tama', 0A4h, 'o del lado del rectangulo. $', 0Dh, 0Ah, '$'
@@ -295,9 +284,14 @@ convert_loop:
     cmp al, 0
     je done
 
-    ; Verificar si el carácter es un punto decimal y omitirlo
+    ; Verificar si el carácter es un punto decimal    
     cmp al, '.'
-    je skip_dot
+    jne not_decimal_point
+    inc cl
+    jmp skip_dot
+
+not_decimal_point:    
+    ;je skip_dot
 
     ; Convertir ASCII a número
     sub al, '0'
@@ -332,7 +326,7 @@ done:
     ; Llama a la función para convertir el número de vuelta a una cadena
     call per_result_to_string
 
-    ;jmp end_program
+    jmp end_program
 
 
 rectangle_option:
@@ -780,7 +774,7 @@ end_program:
 
     mov word ptr num2ResL, ax ; Almacena 0 en los primeros 2 bytes de num2ResL
     mov word ptr num2ResL+2, ax ; Almacena 0 en los últimos 2 bytes de num2ResL
- 
+    
     
     ;salto de linea
     mov ah, 09h
@@ -868,10 +862,7 @@ perimetroCuadrado proc ; num1 = lado
     ; Imprimir el mensaje del perimetro
     lea dx, msj1
     call imprimir 
-    
-    ;Imprimir el perimetro calculado
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
-    
+        
     ret 
     perimetroCuadrado endp
 
@@ -879,11 +870,6 @@ areaCuadradro proc ; num1 = lado
     
     call productoEntrada1PorEntrada1 ; en este caso lado*lado (num1*num1)
     ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
-    
-    ;mov ax, [num2ResH] ;QUITAR DESPUES, solo es para verificar
-    ;mov bx, [num2ResH+2] ;QUITAR DESPUES, solo es para verificar
-    ;mov cx, [num2ResL] ;QUITAR DESPUES, solo es para verificar
-    ;mov dx, [num2ResL+2] ;QUITAR DESPUES, solo es para verificar   
     
     mov ah, 09h
     lea dx, newline
@@ -894,9 +880,6 @@ areaCuadradro proc ; num1 = lado
     lea dx, msj2
     call imprimir
     
-    ;Imprimir el area calculada
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
-         
     ret
     areaCuadradro endp 
 
@@ -1053,6 +1036,7 @@ ar_print_result_string:
     jmp ar_print_result_string
 
 ar_finish_string:
+    
     ; Añadir terminador de cadena
     mov byte ptr [di], '$'  ; Usar '$' como terminador para DOS
 
@@ -1094,9 +1078,8 @@ per_result_to_string proc
 
     ; Cargar el valor de result (48 bits)
     mov ax, word ptr [num1ResD+2]
-    mov bx, 0;word ptr [num2ResL]
-    ;mov dx, word ptr [num2ResL-4]
-
+    mov bx, word ptr [num1ResD]
+    mov dx, 0
     ; Guardar la posición inicial de la pila
     mov si, sp
 
@@ -1139,6 +1122,7 @@ per_print_result_string:
     jmp per_print_result_string
 
 per_finish_string:
+    
     ; Añadir terminador de cadena
     mov byte ptr [di], '$'  ; Usar '$' como terminador para DOS
 
@@ -1202,9 +1186,6 @@ div48_skip:
     and di, 0Fh  ; Asegurarse de que el residuo esté en el rango 0-9
     pop si
     ret
-div48 endp
-
-
-
+div48 endp 
 
 end main
