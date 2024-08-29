@@ -17,7 +17,8 @@
 ;Segmento de datos
 .data
 
-decimal_pos db 0 ; Posición del punto decimal en la entrada
+decimal_pos dw 0 ; Posición del punto decimal en la entrada
+has_point db 0  ; Flag para indicar si el número tiene punto decimal
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -38,7 +39,7 @@ decimal_pos db 0 ; Posición del punto decimal en la entrada
     num2ResL dw 3 dup(0) ; para formar una respuesta de 8 bytes
     num3ResH dw 3 dup(0) ; para formar una respuesta de 8 bytes 
     num3ResL dw 3 dup(0) ; para formar una respuesta de 8 bytes 
-    num3ResF dw 3 dup(0)
+    num3ResF dw 3 dup(0) ; para formar una respuesta de 8 bytes 
     
     bufferResp1 db 10 dup('0'), '$'    
     
@@ -46,7 +47,6 @@ decimal_pos db 0 ; Posición del punto decimal en la entrada
 
 
 menu_msg db 'Bienvenido a GeometryTec$', 0Dh, 0Ah, '$'
-;newline db 0Dh, 0Ah, '$'
 prompt_msg db 'Por favor indique a que figura desea calcular su area y perimetro:$', 0Dh, 0Ah, '$'
 option1 db '1. Para Cuadrado.$', 0Dh, 0Ah, '$'
 option2 db '2. Para Rectangulo.$', 0Dh, 0Ah, '$'
@@ -71,45 +71,37 @@ square_side_msg db 'Por favor ingrese el tama', 0A4h, 'o del lado del cuadrado. 
 ;Mensajes del rectangulo
 rectangle_side_msg db 'Por favor ingrese el tama', 0A4h, 'o del lado del rectangulo. $', 0Dh, 0Ah, '$'
 rectangle_height_msg db 'Por favor ingrese el tama', 0A4h, 'o de la altura del rectangulo. $', 0Dh, 0Ah, '$'
-rectangle_results_msg db 'El area del rectangulo es: ','',' y su perimetro','','.', 0Dh, 0Ah, '$'
 
 ;Mensajes del triangulo
 triangle_side_msg db 'Por favor ingrese el tama', 0A4h, 'o del lado del triangulo. $', 0Dh, 0Ah, '$'
 triangle_height_msg db 'Por favor ingrese el tama', 0A4h, 'o de la altura del triangulo. $', 0Dh, 0Ah, '$'
-triangle_results_msg db 'El area del triangulo es: ','',' y su perimetro','','.', 0Dh, 0Ah, '$'
 
 ;Mensajes del rombo
 rhombus_hd_msg db 'Por favor ingrese el tama', 0A4h, 'o de la diagonal mayor del rombo. $', 0Dh, 0Ah, '$'
 rhombus_ld_msg db 'Por favor ingrese el tama', 0A4h, 'o de la diagonal menor del rombo. $', 0Dh, 0Ah, '$'
 rhombus_side_msg db 'Por favor ingrese el tama', 0A4h, 'o del lado del rombo. $', 0Dh, 0Ah, '$'
-rhombus_results_msg db 'El area del rombo es: ','',' y su perimetro','','.', 0Dh, 0Ah, '$'
 
 ;Mensajes del pentagono
 pentagon_side_msg db 'Por favor ingrese el tama', 0A4h, 'o del lado del pentagono. ', 0Dh, 0Ah, '$'
 pentagon_apo_msg db 'Por favor ingrese el tama', 0A4h, 'o de la apotema del pentagono. ', 0Dh, 0Ah, '$'
-pentagon_results_msg db 'El area del pentagono es: ','',' y su perimetro','','.', 0Dh, 0Ah, '$'
 
 ;Mensajes del hexagono
 hexagon_side_msg db 'Por favor ingrese el tama', 0A4h, 'o del lado del hexagono. ', 0Dh, 0Ah, '$'
 hexagon_apo_msg db 'Por favor ingrese el tama', 0A4h, 'o de la apotema del hexagono. ', 0Dh, 0Ah, '$'
-hexagon_results_msg db 'El area del hexagono es: ','',' y su perimetro','','.', 0Dh, 0Ah, '$'
 
 ;Mensajes del circulo
 circle_rad_msg db 'Por favor ingrese el tama', 0A4h, 'o del radio del circulo. $', 0Dh, 0Ah, '$'
-circle_results_msg db 'El area del circulo es: ','',' y su perimetro','','.', 0Dh, 0Ah, '$'
 
 ;Mensajes del trapecio
 trapeze_hbase_msg db 'Por favor ingrese el tama', 0A4h, 'o de la base inferior del trapecio. $', 0Dh, 0Ah, '$'
 trapeze_lbase_msg db 'Por favor ingrese el tama', 0A4h, 'o de la base superior del trapecio. $', 0Dh, 0Ah, '$'
 trapeze_height_msg db 'Por favor ingrese el tama', 0A4h, 'o de la altura del trapecio. $', 0Dh, 0Ah, '$'
 trapeze_side_msg db 'Por favor ingrese el tama', 0A4h, 'o de los lados laterales del trapecio. $', 0Dh, 0Ah, '$'
-trapeze_results_msg db 'El area del trapecio es: ','',' y su perimetro','','.', 0Dh, 0Ah, '$'
 
 ;Mensajes del paralelogramo
 parallelogram_base_msg db 'Por favor ingrese el tama', 0A4h, 'o de las bases del paralelogramo. $', 0Dh, 0Ah, '$'
 parallelogram_height_msg db 'Por favor ingrese el tama', 0A4h, 'o de la altura del paralelogramo. $', 0Dh, 0Ah, '$'
 parallelogram_side_msg db 'Por favor ingrese el tama', 0A4h, 'o de los lados laterales del paralelogramo. $', 0Dh, 0Ah, '$'
-parallelogram_results_msg db 'El area del paralelogramo es: ','',' y su perimetro','','.', 0Dh, 0Ah, '$'
 
 ;Menu para continuar o salir    
 continue_msg db 'Por favor presione:$', 0Dh, 0Ah, '$'
@@ -752,7 +744,8 @@ circle_option:
     ; Llama a la función para convertir el número de vuelta a una cadena
     call per_result_to_string
 
-    jmp end_program
+    
+    ;jmp end_program
 
 trapezoid_option: 
 
@@ -1106,6 +1099,7 @@ main endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 ;1. CUADRADO
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 perimetroCuadrado proc ; num1 = lado   
      
@@ -1151,6 +1145,7 @@ areaCuadradro proc ; num1 = lado
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; 2. RECTANGULO
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 perimetroRect proc ; num1= base, num2= altura
     
@@ -1182,15 +1177,13 @@ areaRect proc ; num1= base, num2= altura
     ; Imprimir el mensaje del area
     lea dx, ar_msg
     call imprimir
-    
-    ;Imprimir el area calculada
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
-     
+       
     ret
     areaRect endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; 3. TRIANGULO num1= altura, num2= lado
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 perimetroTrian proc  ; lado = num2
     
@@ -1214,8 +1207,6 @@ perimetroTrian proc  ; lado = num2
     lea dx, per_msg
     call imprimir 
     
-    ;Imprimir el perimetro calculado
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
     ret
     perimetroTrian endp
  
@@ -1250,6 +1241,7 @@ areaTriangulo proc
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 ; 4. ROMBO; num1= diagonal mayor, num2= diagonal menor, num3 = a
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 perimetroRombo proc  ; a = num3
     
@@ -1273,8 +1265,6 @@ perimetroRombo proc  ; a = num3
     lea dx, per_msg
     call imprimir 
     
-    ;Imprimir el perimetro calculado
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
     ret
     perimetroRombo endp
  
@@ -1310,6 +1300,7 @@ areaRombo proc   ; num1= diagonal mayor, num2= diagonal menor
  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 ; 5. Pentagono num1 = apotema, num2 = perimetro, num3 = lado
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 perimetroPent proc ; num3 = lado    
      
@@ -1334,16 +1325,7 @@ perimetroPent proc ; num3 = lado
     
     mov cx, [num2] ;;;;;;;;; VER
     mov dx, [num2+2]
-    
-    ; Imprimir el mensaje del perimetro
-    ;lea dx, per_msg
-    ;call imprimir 
-    
-    ;Imprimir el perimetro calculado
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
-    
-    ;call areaPent
-    
+        
     ret 
     
     perimetroPent endp
@@ -1376,6 +1358,7 @@ areaPent proc  ;num1 = apotema, num2 = perimetro, num3 = lado
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 ; 6. Hexagono num1 = apotema, num2 = perimetro, num3 = lado
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 perimetroHex proc ; num3 = lado    
      
@@ -1400,15 +1383,6 @@ perimetroHex proc ; num3 = lado
     
     mov cx, [num2] ;;;;;;;;; VER
     mov dx, [num2+2]
-    
-    ; Imprimir el mensaje del perimetro
-    ;lea dx, per_msg
-    ;call imprimir 
-    
-    ;Imprimir el perimetro calculado
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
-    
-    ;call areaPent
     
     ret 
     
@@ -1441,6 +1415,7 @@ areaHex proc  ;num1 = apotema, num2 = perimetro, num3 = lado
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; 7. CIRCULO  num1 = radio
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 perimetroCirculo proc ;num1 = radio  
     
@@ -1532,14 +1507,12 @@ areaCirculo proc ; num1= radio
     lea dx, ar_msg
     call imprimir
     
-    ;Imprimir el area calculada
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
-   
     ret
     areaCirculo endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 ; 8. Trapecio; num1= altura, num2= (B+b);  num3= lado; num4= base mayor, num5= base menor 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 perimetroTrapecio proc  ; num4= base mayor, num5= base menor; num3= lado;  B+b+l+l
      
@@ -1609,17 +1582,10 @@ perimetroTrapecio proc  ; num4= base mayor, num5= base menor; num3= lado;  B+b+l
     ; Imprimir el mensaje del area
     lea dx, ar_msg
     call imprimir
-    
-    ;Imprimir el area calculada
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII
-     
-     
-     
+
     mov [num2ResH], 0  ;se necesita en 0 para el result del area 
     mov [num2ResH+2], 0      
-    
-    ;call areaTrapecio
-    
+        
     ret
     perimetroTrapecio endp
 
@@ -1651,6 +1617,7 @@ areaTrapecio proc  ;num1= altura, num2= (B+b)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;9. PARALELOGRAMO  num1=h, num2=base , num3=a
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 perimetroParalelogramo proc  
      
@@ -1689,10 +1656,7 @@ perimetroParalelogramo proc
     ; Imprimir el mensaje del area
     lea dx, per_msg
     call imprimir
-    
-    ;Imprimir el area calculada
-    ; FALTA LA FUNCION PARA PASAR DE NUMERO A ASCII  
-       
+           
     ret
     perimetroParalelogramo endp
 
@@ -1765,6 +1729,7 @@ productoEntrada1PorEntrada1 proc  ;hace num1*num1
     ret
     productoEntrada1PorEntrada1 endp
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 productoEntrada1PorEntrada2 proc  ;hace num1*num2
     ;el resultado queda en [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2]
@@ -1804,7 +1769,7 @@ productoEntrada1PorEntrada2 proc  ;hace num1*num2
     ret
     productoEntrada1PorEntrada2 endp     
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 DosVecesNum1MasNum2 proc ; num1= base, num2= altura
     
@@ -1840,6 +1805,8 @@ DosVecesNum1MasNum2 proc ; num1= base, num2= altura
     
     ret
     DosVecesNum1MasNum2 endp  
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 divNumDe64bitsEntreDos proc
     ; divide entre dos el num [num2ResH]+[num2ResH+2]+[num2ResL]+[num2ResL+2] 
@@ -1910,9 +1877,7 @@ divNumDe64bitsEntreDos proc
     ret
     divNumDe64bitsEntreDos endp    
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
-
 
 ; Función para multiplicar el resultado de 48 bits por AX
 mul48 proc
@@ -1947,8 +1912,7 @@ mul48 endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 
-
-; Funcion para printear area
+; Función para imprimir número de 48 bits con punto decimal y dígitos fraccionales
 ar_result_to_string proc
     push ax
     push bx
@@ -1959,21 +1923,24 @@ ar_result_to_string proc
     
     ; Limpiar el búfer de salida
     lea di, input
-    mov cx, 100   ; Asumiendo que input tiene 100 bytes
-    mov al, 0     ; Llenar con ceros
+    mov cx, 100
+    mov al, 0
     rep stosb
     
     ; Reiniciar DI al inicio del búfer
     lea di, input
-    mov cx, 15     ; Vamos a convertir hasta 15 dígitos (máximo para 48 bits)
+    mov cx, 15
 
     ; Cargar el valor de result (48 bits)
     mov ax, word ptr [num2ResL+2]
     mov bx, word ptr [num2ResL]
-    mov dx, word ptr [num2ResL-4]
+    mov dx, word ptr [num2ResH+2]
 
     ; Guardar la posición inicial de la pila
     mov si, sp
+
+    ; Contador para los dígitos
+    xor bp, bp
 
 ar_convert_to_string:
     ; Dividir el número de 48 bits por 10
@@ -1985,6 +1952,9 @@ ar_convert_to_string:
     ; Convertir el residuo en un carácter y guardarlo
     add di, '0'
     push di
+
+    ; Incrementar el contador de dígitos
+    inc bp
 
     ; Verificar si el cociente es cero
     or ax, ax
@@ -2002,6 +1972,21 @@ ar_done_conversion:
     ; Mover DI al inicio del búfer de salida
     lea di, input
 
+    ; Determinar la posición del punto decimal
+    mov cx, [decimal_pos]
+    shl cx, 1  ; Multiplicar por 2 para el resultado del área
+
+    ; Si no hay dígitos fraccionales, no imprimimos el punto
+    cmp cx, 0
+    je ar_no_decimal
+
+    ; Calcular la posición del punto decimal desde la derecha
+    mov dx, bp  ; DX ahora contiene el número total de dígitos
+    sub dx, cx  ; DX ahora contiene la posición del punto desde la derecha
+
+    ; Contador para la posición actual
+    xor bp, bp
+
 ar_print_result_string:
     ; Verificar si hemos procesado todos los caracteres
     cmp sp, si
@@ -2009,16 +1994,32 @@ ar_print_result_string:
 
     ; Obtener el siguiente carácter (en orden inverso)
     pop ax
-    mov [di], al  ; Colocarlo en el búfer de salida
+
+    ; Verificar si necesitamos insertar el punto decimal
+    cmp bp, dx
+    jne ar_no_decimal_point
+
+    ; Insertar el punto decimal
+    mov byte ptr [di], '.'
     inc di
+
+ar_no_decimal_point:
+    mov [di], al  ; Colocar el dígito en el búfer de salida
+    inc di
+    inc bp
     jmp ar_print_result_string
 
-ar_finish_string:
-    ; Insertar el punto decimal
-    ;call insert_decimal_point
+ar_no_decimal:
+    ; Imprimir todos los dígitos sin punto decimal
+    pop ax
+    mov [di], al
+    inc di
+    cmp sp, si
+    jne ar_no_decimal
 
+ar_finish_string:
     ; Añadir terminador de cadena
-    mov byte ptr [di], '$'  ; Usar '$' como terminador para DOS
+    mov byte ptr [di], '$'
 
     ; Mostrar la cadena resultante
     lea dx, input
@@ -2035,7 +2036,6 @@ ar_finish_string:
 ar_result_to_string endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
-
 
 ; Funcion para printear area
 cir_ar_result_to_string proc
@@ -2103,8 +2103,6 @@ cir_ar_print_result_string:
     jmp cir_ar_print_result_string
 
 cir_ar_finish_string:
-    ; Insertar el punto decimal
-    ;call insert_decimal_point
 
     ; Añadir terminador de cadena
     mov byte ptr [di], '$'  ; Usar '$' como terminador para DOS
@@ -2192,8 +2190,6 @@ tri_ar_print_result_string:
     jmp tri_ar_print_result_string
 
 tri_ar_finish_string:
-    ; Insertar el punto decimal
-    ;call insert_decimal_point
 
     ; Añadir terminador de cadena
     mov byte ptr [di], '$'  ; Usar '$' como terminador para DOS
@@ -2279,8 +2275,6 @@ tra_per_print_result_string:
     jmp tra_per_print_result_string
 
 tra_per_finish_string:
-    ; Insertar el punto decimal
-    ;call insert_decimal_point
 
     ; Añadir terminador de cadena
     mov byte ptr [di], '$'  ; Usar '$' como terminador para DOS
@@ -2390,7 +2384,6 @@ par_per_result_to_string endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 
-
 ; Funcion para printear area
 per_result_to_string proc
     push ax
@@ -2456,8 +2449,6 @@ per_print_result_string:
     jmp per_print_result_string
 
 per_finish_string:
-    ; Insertar el punto decimal
-    ;call insert_decimal_point
 
     ; Añadir terminador de cadena
     mov byte ptr [di], '$'  ; Usar '$' como terminador para DOS
@@ -2476,28 +2467,10 @@ per_finish_string:
     ret
 per_result_to_string endp
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 
-; Función para dividir un número de 32 bits por 10
-; Entrada: DX:AX = dividendo, CX = divisor (10)
-; Salida: DX:AX = cociente, BX = residuo
-div32 proc
-    push cx
-    xor bx, bx
-    mov cx, 32
-div32_loop:
-    shl ax, 1
-    rcl dx, 1
-    rcl bx, 1
-    cmp bx, 10
-    jb div32_skip
-    sub bx, 10
-    inc ax
-div32_skip:
-    loop div32_loop
-    pop cx
-    ret
-div32 endp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+; Funcion para dividir un numero de 48 bits por 10
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 
 div48 proc
     push si
@@ -2524,11 +2497,13 @@ div48_skip:
     ret
 div48 endp 
 
-
-; Procedimiento para convertir una cadena ASCII a número
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+; Procedimiento para convertir una cadena ASCII a numero
 ; Entrada: SI apunta al inicio de la cadena
-;          DI apunta a la dirección de memoria donde guardar el resultado (6 bytes)
-; Salida: El número convertido se almacena en la dirección apuntada por DI (6 bytes)
+;          DI apunta a la direccion de memoria donde guardar el resultado (6 bytes)
+; Salida: El numero convertido se almacena en la direccion apuntada por DI (6 bytes)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+
 ascii_to_number proc
     push ax
     push bx
@@ -2541,7 +2516,9 @@ ascii_to_number proc
     mov word ptr [di+2], 0
     mov word ptr [di+4], 0
 
-    xor cx, cx  ; Contador de iteraciones
+    mov word ptr [decimal_pos], 0  ; Inicializar la posición decimal
+    mov byte ptr [has_point], 0  ; Inicializar flag de punto decimal
+    xor bx, bx  ; BX será nuestro contador de dígitos fraccionarios
 
 convert_loop:
     ; Cargar el siguiente carácter
@@ -2554,18 +2531,17 @@ convert_loop:
     ; Verificar si el carácter es un punto decimal    
     cmp al, '.'
     jne not_decimal_point
-    mov [decimal_pos], cl ; Guardar la posición del punto decimal
-    inc cl
+    mov byte ptr [has_point], 1  ; Marcar que hemos encontrado un punto
     jmp next_char
 
-not_decimal_point:    
+not_decimal_point:
     ; Convertir ASCII a número
     sub al, '0'
 
     ; Multiplicar el resultado actual por 10
     push ax
     mov ax, 10
-    call mul48_di  ; Nueva versión de mul48 que usa DI
+    call mul48_di
     pop ax
 
     ; Sumar el nuevo dígito
@@ -2573,12 +2549,26 @@ not_decimal_point:
     add [di], ax
     adc word ptr [di+2], 0
     adc word ptr [di+4], 0
+    
+    ; Incrementar el contador de dígitos decimales si ya pasamos el punto
+    cmp byte ptr [has_point], 1
+    jne next_char
+    inc bx  ; Incrementar el contador de dígitos fraccionarios
+
 
 next_char:
-    inc cl
+    inc cx
     jmp convert_loop
 
 done_conversion:
+    ; Si hubo punto decimal, calcular los dígitos después del punto
+    cmp byte ptr [has_point], 1
+    jne no_decimal_point
+    sub cx, word ptr [decimal_pos]  ; cx ahora contiene el número de dígitos después del punto
+    dec cx  ; Restar 1 para no contar el punto mismo
+    mov word ptr [decimal_pos], bx  ; Guardar el número de dígitos fraccionarios
+    
+no_decimal_point:
     pop si
     pop dx
     pop cx
@@ -2586,6 +2576,8 @@ done_conversion:
     pop ax
     ret
 ascii_to_number endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Versión modificada de mul48 que usa DI como puntero al resultado
 mul48_di proc
